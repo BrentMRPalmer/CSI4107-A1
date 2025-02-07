@@ -4,6 +4,7 @@ import time
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from nltk.stem import PorterStemmer
+from collections import Counter
 
 #############
 # Downloads
@@ -28,7 +29,7 @@ stemmer = PorterStemmer()
 
 ##########################
 # Step 1: Preprocessing
-#########################
+##########################
 
 def extract_text(document):
     data = json.loads(document)
@@ -57,20 +58,37 @@ def preprocess(document):
     tokenized_document = tokenize(text_document)
     filtered_document = remove_stopwords(tokenized_document)
     return stem(filtered_document)
+
+###################
+# Step 2: Indexing
+###################
+
+def create_inverted_index(documents):
+    inverted_index = dict()
+
+    for document_id, text in documents.items():
+        # Count the occurrences of each term in the current document's text
+        counter = Counter(text)
+        for term, count in counter.items():
+            if term not in inverted_index:
+                inverted_index[term] = [(document_id, count)]
+            else:
+                inverted_index[term].append((document_id, count))
+
+    return inverted_index
     
 if __name__ == "__main__":
+
     #################
     # Read in corpus
     #################
-    documents = []
+
+    documents = dict()
     with open("./scifact/corpus.jsonl", 'r', encoding="utf-8") as corpus:
         for document in corpus:
-            documents.append(preprocess(document))
+            data = json.loads(document)
+            documents[data["_id"]] = preprocess(document)
+    
+    inverted_index = create_inverted_index(documents)
 
-    ##################
-    # Verify outputs
-    ##################
-
-    for document in documents:
-        print(document)
-        time.sleep(15)
+    print(inverted_index["white"])
