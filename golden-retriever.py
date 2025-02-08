@@ -33,6 +33,7 @@ stemmer = PorterStemmer()
 
 def extract_text(document):
     data = json.loads(document)
+    # Extract the title and text from document json, and make it lowercase
     return f"{data["title"]} + ' ' + {data["text"]}".lower()
 
 def tokenize(document):
@@ -64,6 +65,7 @@ def preprocess(document):
 ###################
 
 def create_inverted_index(documents):
+    # Keys are words in vocabulary, values are pairs of document id and count
     inverted_index = dict()
 
     for document_id, text in documents.items():
@@ -76,19 +78,31 @@ def create_inverted_index(documents):
                 inverted_index[term].append((document_id, count))
 
     return inverted_index
-    
+
+##############
+# Entry Point
+##############
+
 if __name__ == "__main__":
+    # Params
+    corpus_dir = "./scifact/"
+    corpus_filename = "corpus.jsonl"
+    corpus_path = corpus_dir + corpus_filename
 
-    #################
-    # Read in corpus
-    #################
-
+    # Read in the corpus and preprocess (step 1)
+    
+    # Dictionary with key: document id, value: document text (text includes title and text)
     documents = dict()
-    with open("./scifact/corpus.jsonl", 'r', encoding="utf-8") as corpus:
+
+    # Read in corpus
+    with open(corpus_path, 'r', encoding="utf-8") as corpus:
         for document in corpus:
+            # Load in the document in json format
             data = json.loads(document)
+            # Preprocess document text before saving
             documents[data["_id"]] = preprocess(document)
     
+    # Create inverted index (step 2)
     inverted_index = create_inverted_index(documents)
 
     print(inverted_index["white"])
