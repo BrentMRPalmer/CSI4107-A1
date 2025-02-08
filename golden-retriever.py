@@ -31,10 +31,15 @@ stemmer = PorterStemmer()
 # Step 1: Preprocessing
 ##########################
 
-def extract_text(document):
+def extract_document_text(document):
     data = json.loads(document)
     # Extract the title and text from document json, and make it lowercase
     return f"{data["title"]} + ' ' + {data["text"]}".lower()
+
+def extract_query_text(query):
+    data = json.loads(query)
+    # Extract the text from query json, and make it lowercase
+    return f"{data["text"]}".lower()
 
 def tokenize(document):
     return word_tokenize(document)
@@ -54,8 +59,14 @@ def stem(document):
         stemmed_words.append(stemmer.stem(word))
     return stemmed_words
 
-def preprocess(document):
-    text_document = extract_text(document)
+def preprocess_document(document):
+    text_document = extract_document_text(document)
+    tokenized_document = tokenize(text_document)
+    filtered_document = remove_stopwords(tokenized_document)
+    return stem(filtered_document)
+
+def preprocess_query(document):
+    text_document = extract_query_text(document)
     tokenized_document = tokenize(text_document)
     filtered_document = remove_stopwords(tokenized_document)
     return stem(filtered_document)
@@ -79,6 +90,12 @@ def create_inverted_index(documents):
 
     return inverted_index
 
+###############################
+# Step 3: Retrieval and Ranking
+###############################
+
+
+
 ##############
 # Entry Point
 ##############
@@ -89,7 +106,11 @@ if __name__ == "__main__":
     corpus_filename = "corpus.jsonl"
     corpus_path = corpus_dir + corpus_filename
 
-    # Read in the corpus and preprocess (step 1)
+    query_dir = "./scifact/"
+    query_filename = "queries.jsonl"
+    query_path = query_dir + query_filename
+
+    # Read in the corpus and queries and preprocess (step 1)
     
     # Dictionary with key: document id, value: document text (text includes title and text)
     documents = dict()
@@ -100,9 +121,19 @@ if __name__ == "__main__":
             # Load in the document in json format
             data = json.loads(document)
             # Preprocess document text before saving
-            documents[data["_id"]] = preprocess(document)
+            documents[data["_id"]] = preprocess_document(document)
+
+    # Dictionary with key: query id, value: query text
+    queries = dict()
+
+    # Read in corpus
+    with open(query_path, 'r', encoding="utf-8") as query_corpus:
+        for query in query_corpus:
+            # Load in the query in json format
+            data = json.loads(query)
+            # Preprocess query text before saving
+            queries[data["_id"]] = preprocess_query(query)
+    
     
     # Create inverted index (step 2)
     inverted_index = create_inverted_index(documents)
-
-    print(inverted_index["white"])
