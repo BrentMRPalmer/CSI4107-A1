@@ -1,6 +1,7 @@
 import nltk
 import json
 import time
+import math
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from nltk.stem import PorterStemmer
@@ -63,7 +64,8 @@ def preprocess_document(document):
     text_document = extract_document_text(document)
     tokenized_document = tokenize(text_document)
     filtered_document = remove_stopwords(tokenized_document)
-    return stem(filtered_document)
+    stemmed = stem(filtered_document)
+    return (len(stemmed), stemmed)
 
 def preprocess_query(document):
     text_document = extract_query_text(document)
@@ -79,14 +81,16 @@ def create_inverted_index(documents):
     # Keys are words in vocabulary, values are pairs of document id and count
     inverted_index = dict()
 
-    for document_id, text in documents.items():
+    for document_id, content in documents.items():
+        text = content[1]
         # Count the occurrences of each term in the current document's text
         counter = Counter(text)
         for term, count in counter.items():
             if term not in inverted_index:
-                inverted_index[term] = [(document_id, count)]
+                inverted_index[term] = [1, [(document_id, count)]]
             else:
-                inverted_index[term].append((document_id, count))
+                inverted_index[term][0] += 1
+                inverted_index[term][1].append((document_id, count))
 
     return inverted_index
 
@@ -94,6 +98,43 @@ def create_inverted_index(documents):
 # Step 3: Retrieval and Ranking
 ###############################
 
+def bm25(term, document_id, documents, inverted_index, avg_dl):
+    """ Desc.
+
+    Args:
+        term (str): The term used to calculate BM25 score.
+        document_id (int): The id of the document used to calculate the BM25 score.
+        documents (dict): The list of all documents.
+        inverted_index (dict): The inverted index.
+
+        "dog" : (2, [(d1, 5), (d2, 7)])
+    
+    Returns:
+        list: 
+    """
+    N = len(documents)
+    tf = 0
+    for current_id, count in inverted_index[term][1]:
+        if current_id == document_id:
+            tf = count
+            break
+    df = inverted_index[term][0]
+    dl = documents[document_id][0]
+    avdl = avg_dl
+    k1 = 1.5 # come back to this
+    b = 0.5 # come back to this
+    return (tf * math.log((N - df + 0.5) / (df + 0.5))) / (k1 * ((1 - b) + (b * dl) / avdl) + tf)
+
+def rank(query, inverted_index):
+    """ Desc.
+
+    Args:
+        query (str): example.
+        inverted_index (dict): example.
+    
+    Returns:
+        list: 
+    """
 
 
 ##############
@@ -103,7 +144,7 @@ def create_inverted_index(documents):
 if __name__ == "__main__":
     # Params
     corpus_dir = "./scifact/"
-    corpus_filename = "corpus.jsonl"
+    corpus_filename = "test_corpus.jsonl"
     corpus_path = corpus_dir + corpus_filename
 
     query_dir = "./scifact/"
@@ -112,7 +153,7 @@ if __name__ == "__main__":
 
     # Read in the corpus and queries and preprocess (step 1)
     
-    # Dictionary with key: document id, value: document text (text includes title and text)
+    # Dictionary with key: document id, value: (length, list of document terms) (text includes title and text)
     documents = dict()
 
     # Read in corpus
@@ -137,3 +178,17 @@ if __name__ == "__main__":
     
     # Create inverted index (step 2)
     inverted_index = create_inverted_index(documents)
+
+    doc_length_sum = 0
+    for document_id, _ in documents.items():
+        doc_length_sum += documents[document_id][0]
+    avdl = doc_length_sum/len(documents)
+
+    print(bm25("brain", "1", documents, inverted_index, avdl))
+    # for doc_id, content in documents.items():
+    #     print(f"doc id: {doc_id} content: {content}")
+    #     time.sleep(10)
+
+    # for term, value in inverted_index.items():
+    #     print(f"term: {term} value: {value}")
+    #     time.sleep(10)
