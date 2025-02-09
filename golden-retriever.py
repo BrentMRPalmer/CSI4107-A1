@@ -125,7 +125,15 @@ def bm25(term, document_id, documents, inverted_index, avg_dl):
     b = 0.5 # come back to this
     return (tf * math.log((N - df + 0.5) / (df + 0.5))) / (k1 * ((1 - b) + (b * dl) / avdl) + tf)
 
-def rank(query, inverted_index):
+def bm25_matrix(documents, inverted_index, avg_dl):
+    matrix = dict()
+    for term, _ in inverted_index.items():
+        matrix[term] = dict()
+        for document_id, _ in documents.items():
+            matrix[term][document_id] = bm25(term, document_id, documents, inverted_index, avg_dl)
+    return matrix
+
+def rank(query, documents, matrix):
     """ Desc.
 
     Args:
@@ -135,6 +143,30 @@ def rank(query, inverted_index):
     Returns:
         list: 
     """
+    scores = {document_id: 0 for document_id, _ in documents.items()}
+
+    for term in query:
+        if term in inverted_index:
+            containing_documents = inverted_index[term][1]
+        else:
+            continue
+        for document, _ in containing_documents:
+            if document not in scores:
+                scores[document] = matrix[term][document]
+            else:
+                scores[document] += matrix[term][document]
+
+    return sorted(scores.items(), key=lambda item: item[1], reverse=True)
+    
+    for document_id, _ in documents.items():
+        score = 0
+        for term in query:
+            score += matrix[term][document_id]
+        scores[document_id] = score
+    
+    return scores
+
+
 
 
 ##############
@@ -144,7 +176,7 @@ def rank(query, inverted_index):
 if __name__ == "__main__":
     # Params
     corpus_dir = "./scifact/"
-    corpus_filename = "test_corpus.jsonl"
+    corpus_filename = "corpus.jsonl"
     corpus_path = corpus_dir + corpus_filename
 
     query_dir = "./scifact/"
@@ -184,11 +216,15 @@ if __name__ == "__main__":
         doc_length_sum += documents[document_id][0]
     avdl = doc_length_sum/len(documents)
 
-    print(bm25("brain", "1", documents, inverted_index, avdl))
+    # print(bm25("methyl", "3", documents, inverted_index, avdl))
+    matrix = bm25_matrix(documents, inverted_index, avdl)
+    print(rank(queries["0"], documents, matrix))
+    # print(rank(["brain", "play", "disabl"], documents, matrix))
+
+    # print(matrix["play"]["3"])
     # for doc_id, content in documents.items():
     #     print(f"doc id: {doc_id} content: {content}")
     #     time.sleep(10)
 
     # for term, value in inverted_index.items():
     #     print(f"term: {term} value: {value}")
-    #     time.sleep(10)
