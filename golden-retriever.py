@@ -193,7 +193,7 @@ def create_inverted_index(documents):
         dict: A dictionary mapping the token to a list that contains the number of documents with that token as the first element,
                 and a list of tuples as the second element, where each tuple contains the document ID and the corresponding count of 
                 the token in that document, for each document that contains that token.
-                { token (string): [number of documents with token (int), [( document ID (int), token count (int) )]] (List[int, List[tuple]]) }
+                { token (str): [number of documents with token (int), [( document ID (int), token count (int) )]] (List[int, List[tuple]]) }
     """
     # Keys are tokens in vocabulary, values are pairs of document ID and token count
     inverted_index = dict()
@@ -215,19 +215,25 @@ def create_inverted_index(documents):
 # Step 3: Retrieval and Ranking
 ###############################
 
-def bm25(term, document_id, documents, inverted_index, avg_dl):
-    """ Desc.
+def compute_bm25(term, document_id, documents, inverted_index, avg_dl):
+    """ Computes the BM25 score between a given term and document.
+
+    Uses the BM25 formula provided in the Week 2 section of the CSI4107 course page.
 
     Args:
         term (str): The term used to calculate BM25 score.
-        document_id (int): The id of the document used to calculate the BM25 score.
-        documents (dict): The list of all documents.
-        inverted_index (dict): The inverted index.
-
-        "dog" : (2, [(d1, 5), (d2, 7)])
+        document_id (int): The document ID used to calculate the BM25 score.
+        documents (dict): A dictionary mapping document ID to a tuple containing the number of tokens 
+                            in the document and the corresponding list of tokens.
+                            { document_id (int): ( number of tokens (int), list of tokens (list) ) (tuple) }
+        inverted_index (dict): A dictionary mapping the token to a list that contains the number of documents with that token as the first element,
+                                and a list of tuples as the second element, where each tuple contains the document ID and the corresponding count of 
+                                the token in that document, for each document that contains that token.
+                                { token (str): [number of documents with token (int), [( document ID (int), token count (int) )]] (List[int, List[tuple]]) }
+        avg_dl (float): The average length over documents.
     
     Returns:
-        list: 
+        float: The BM25 score between the given term and document.
     """
     N = len(documents)
     tf = 0
@@ -238,46 +244,74 @@ def bm25(term, document_id, documents, inverted_index, avg_dl):
     df = inverted_index[term][0]
     dl = documents[document_id][0]
     avdl = avg_dl
-    k1 = 1.5 # come back to this
-    b = 0.5 # come back to this
+    k1 = 1.2 # come back to this
+    b = 0.75 # come back to this
     return (tf * math.log((N - df + 0.5) / (df + 0.5))) / (k1 * ((1 - b) + (b * dl) / avdl) + tf)
 
-def bm25_matrix(documents, inverted_index, avg_dl):
+def compute_bm25_matrix(documents, inverted_index, avg_dl):
+    """ Generates a matrix containing the BM25 score of every combination of term in our vocabulary with every document.
+
+    Args:
+        documents (dict): A dictionary mapping document ID to a tuple containing the number of tokens 
+                            in the document and the corresponding list of tokens.
+                            { document_id (int): ( number of tokens (int), list of tokens (list) ) (tuple) }
+        inverted_index (dict): A dictionary mapping the token to a list that contains the number of documents with that token as the first element,
+                                and a list of tuples as the second element, where each tuple contains the document ID and the corresponding count of 
+                                the token in that document, for each document that contains that token.
+                                { token (str): [number of documents with token (int), [( document ID (int), token count (int) )]] (List[int, List[tuple]]) }
+        avg_dl (float): The average length over documents.
+    
+    Returns:
+        Dict[dict]: A matrix containing the BM25 score of every combination of term in our vocabulary with every document.
+                        { term (str): {document_id (int): bm25 score (float)} }
+    """
     matrix = dict()
     for term, _ in inverted_index.items():
         matrix[term] = dict()
         for document_id, _ in documents.items():
-            matrix[term][document_id] = bm25(term, document_id, documents, inverted_index, avg_dl)
+            matrix[term][document_id] = compute_bm25(term, document_id, documents, inverted_index, avg_dl)
     return matrix
 
-def rank(query, documents, matrix, inverted_index):
-    """ Desc.
+def rank(query, documents, bm25_matrix, inverted_index):
+    """ Retrieves and ranks documents in descending order based on summed BM25 scores.
+
+    The score of a document is the sum of the BM25 scores between each term in the query and the document.
 
     Args:
-        query (str): example.
-        inverted_index (dict): example.
+        query (list): The list of query terms.
+        documents (dict): A dictionary mapping document ID to a tuple containing the number of tokens 
+                            in the document and the corresponding list of tokens.
+                            { document_id (int): ( number of tokens (int), list of tokens (list) ) (tuple) }
+        bm25_matrix (Dict[dict]): A matrix containing the BM25 score of every combination of term in our vocabulary with every document.
+                                    { term (str): {document_id (int): bm25 score (float)} }
+        inverted_index (dict): A dictionary mapping the token to a list that contains the number of documents with that token as the first element,
+                                and a list of tuples as the second element, where each tuple contains the document ID and the corresponding count of 
+                                the token in that document, for each document that contains that token.
+                                { token (str): [number of documents with token (int), [( document ID (int), token count (int) )]] (List[int, List[tuple]]) }
+        
     
     Returns:
-        list: A list of tuples in the form (document_id, BM25_score)
+        list: A list of tuples in the form (document_id, BM25_score), sorted by BM25_score in descending order.
     """
+    # Initialize default BM25 score to 0 for all documents
     scores = {document_id: 0 for document_id, _ in documents.items()}
 
+    # Compute aggregated BM25 scores by only considering the documents that contain a term
     for term in query:
-        if term in inverted_index:
-            containing_documents = inverted_index[term][1]
-        else:
+        # Skip terms that are not in our vocabulary
+        if term not in inverted_index:
             continue
-        for document, _ in containing_documents:
-            if document not in scores:
-                scores[document] = matrix[term][document] # Remove this later
-            else:
-                scores[document] += matrix[term][document]
+        # Only process documents that contain the term
+        containing_documents = inverted_index[term][1]
+        for document_id, _ in containing_documents:
+            scores[document_id] += bm25_matrix[term][document_id]
 
+    # Compute final sorted ranking
     return sorted(scores.items(), key=lambda item: item[1], reverse=True)
 
-##############
-# 
-##############
+#################################
+# Retrieval and Ranking Pipeline
+#################################
 
 def load_and_rank(queries, include_text, result_name):
     # Read in the corpus and preprocess (step 1)
@@ -322,7 +356,7 @@ def load_and_rank(queries, include_text, result_name):
 
     # Perform retrieval and ranking
     # Compute the BM25 score between every document and every term in the vocabulary
-    matrix = bm25_matrix(documents, inverted_index, avdl)
+    matrix = compute_bm25_matrix(documents, inverted_index, avdl)
 
     end_time = time.time()
     elapsed_time = end_time - start_time
