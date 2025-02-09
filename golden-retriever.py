@@ -2,6 +2,7 @@ import nltk
 import json
 import time
 import math
+import sys
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from nltk.stem import PorterStemmer
@@ -181,19 +182,32 @@ def preprocess_query(query):
 ###################
 
 def create_inverted_index(documents):
-    # Keys are words in vocabulary, values are pairs of document id and count
+    """ Creates an inverted index based on the provided preprocessed representation of the document corpus.
+
+    Args:
+        documents (dict): A dictionary mapping document ID to a tuple containing the number of tokens 
+                            in the document and the corresponding list of tokens.
+                            { document_id (int): ( number of tokens (int), list of tokens (list) ) (tuple) }
+
+    Returns:
+        dict: A dictionary mapping the token to a list that contains the number of documents with that token as the first element,
+                and a list of tuples as the second element, where each tuple contains the document ID and the corresponding count of 
+                the token in that document, for each document that contains that token.
+                { token (string): [number of documents with token (int), [( document ID (int), token count (int) )]] (List[int, List[tuple]]) }
+    """
+    # Keys are tokens in vocabulary, values are pairs of document ID and token count
     inverted_index = dict()
 
     for document_id, content in documents.items():
         text = content[1]
         # Count the occurrences of each term in the current document's text
         counter = Counter(text)
-        for term, count in counter.items():
-            if term not in inverted_index:
-                inverted_index[term] = [1, [(document_id, count)]]
+        for token, count in counter.items():
+            if token not in inverted_index:
+                inverted_index[token] = [1, [(document_id, count)]]
             else:
-                inverted_index[term][0] += 1
-                inverted_index[term][1].append((document_id, count))
+                inverted_index[token][0] += 1
+                inverted_index[token][1].append((document_id, count))
 
     return inverted_index
 
@@ -236,7 +250,7 @@ def bm25_matrix(documents, inverted_index, avg_dl):
             matrix[term][document_id] = bm25(term, document_id, documents, inverted_index, avg_dl)
     return matrix
 
-def rank(query, documents, matrix):
+def rank(query, documents, matrix, inverted_index):
     """ Desc.
 
     Args:
@@ -262,23 +276,15 @@ def rank(query, documents, matrix):
     return sorted(scores.items(), key=lambda item: item[1], reverse=True)
 
 ##############
-# Entry Point
+# 
 ##############
 
-if __name__ == "__main__":
-    # Params
-    corpus_dir = "./scifact/"
-    corpus_filename = "corpus.jsonl"
-    corpus_path = corpus_dir + corpus_filename
-
-    query_dir = "./scifact/"
-    query_filename = "queries.jsonl"
-    query_path = query_dir + query_filename
-
+def load_and_rank(queries, include_text, result_name):
+    # Read in the corpus and preprocess (step 1)
     start_time = time.time()
-    # Read in the corpus and queries and preprocess (step 1)
-    
-    # Documents stored in dictionary with key: document id, value: (length, list of document terms) (list of document terms includes terms from both title and text)
+
+    # Dictionary representing the corpus by document id
+    # { document_id (int): ( number of tokens (int), list of tokens (list) ) (tuple) }
     documents = dict()
 
     # Read in corpus
@@ -286,24 +292,17 @@ if __name__ == "__main__":
         for document in corpus:
             # Load in the document in json format
             data = json.loads(document)
-            # Preprocess document text before saving
-            documents[data["_id"]] = preprocess_document_title_and_text(document)
+            if include_text:
+                # Preprocess document title and text before assigning to dictionary
+                documents[data["_id"]] = preprocess_document_title_and_text(document)
+            else:
+                # Preprocess document title and text before assigning to dictionary
+                documents[data["_id"]] = preprocess_document_title(document)
 
-    # Dictionary with key: query id, value: query tokens
-    queries = dict()
-
-    # Read in corpus
-    with open(query_path, 'r', encoding="utf-8") as query_corpus:
-        for query in query_corpus:
-            # Load in the query in json format
-            data = json.loads(query)
-            # Preprocess query text before saving
-            queries[data["_id"]] = preprocess_query(query)
-    
     end_time = time.time()
     elapsed_time = end_time - start_time
     print(f"Preprocessing time: {elapsed_time: .4f} second")
-    
+
     # Create inverted index (step 2)
     start_time = time.time()
 
@@ -313,7 +312,9 @@ if __name__ == "__main__":
     elapsed_time = end_time - start_time
     print(f"Inverted index creation time: {elapsed_time: .4f} second")
 
+    # Retrieval and ranking (step 3)
     start_time = time.time()
+
     doc_length_sum = 0
     for document_id, _ in documents.items():
         doc_length_sum += documents[document_id][0]
@@ -329,20 +330,58 @@ if __name__ == "__main__":
 
     # Write the top 100 ranked documents for every test query to an output file
     start_time = time.time()
-    with open("Results.txt", "w") as file:
+    with open(result_name, "w") as file:
         for query_id, query_content in queries.items():
             if (int(query_id) % 2 == 1) :
                 # Obtain the ranked documents for the current query
-                ranked_documents = rank(query_content, documents, matrix)
+                ranked_documents = rank(query_content, documents, matrix, inverted_index)
 
                 # Take the top 100 documents and add them to the file
                 for i in range(100):
                     document_id = ranked_documents[i][0]
                     document_rank = i + 1
                     document_score = ranked_documents[i][1]
-                    tag = "run_1"
+                    if include_text:
+                        tag = "text_included"
+                    else:
+                        tag = "title_only"
                     file.write(f"{str(query_id)} Q0 {str(document_id)} {str(document_rank)} {str(document_score)} {tag}\n")
 
     end_time = time.time()
     elapsed_time = end_time - start_time
     print(f"Query ranking time: {elapsed_time: .4f} second")
+
+##############
+# Entry Point
+##############
+
+if __name__ == "__main__":
+    # Path Parameters
+    base_dir = sys.argv[1] if len(sys.argv) >= 2 else "./scifact/"
+
+    corpus_filename = sys.argv[2] if len(sys.argv) >= 3 else "corpus.jsonl"
+    corpus_path = base_dir + corpus_filename
+
+    query_filename = sys.argv[3] if len(sys.argv) >= 4 else "queries.jsonl"
+    query_path = base_dir + query_filename
+
+    
+    # Dictionary representing the queries by query id
+    # { query_id (int): list of tokens (list) }
+    queries = dict()
+
+    # Read in queries
+    with open(query_path, 'r', encoding="utf-8") as query_corpus:
+        for query in query_corpus:
+            # Load in the query in json format
+            data = json.loads(query)
+            # Preprocess query text before saving
+            queries[data["_id"]] = preprocess_query(query)
+    
+    # Load the documents, create inverted index, and run ranking algorithm
+
+    # Run on title and text
+    load_and_rank(queries, include_text=True, result_name="Results.txt")
+
+    # Run on title only
+    load_and_rank(queries, include_text=False, result_name="Results_Title_Only.txt")
