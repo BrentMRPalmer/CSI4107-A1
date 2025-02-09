@@ -314,7 +314,7 @@ def rank(query, documents, bm25_matrix, inverted_index):
 #################################
 
 def load_and_rank(queries, include_text, result_name):
-    # Read in the corpus and preprocess (step 1)
+    # Read in the document corpus and preprocess (step 1)
     start_time = time.time()
 
     # Dictionary representing the corpus by document id
@@ -330,7 +330,7 @@ def load_and_rank(queries, include_text, result_name):
                 # Preprocess document title and text before assigning to dictionary
                 documents[data["_id"]] = preprocess_document_title_and_text(document)
             else:
-                # Preprocess document title and text before assigning to dictionary
+                # Preprocess document title before assigning to dictionary
                 documents[data["_id"]] = preprocess_document_title(document)
 
     end_time = time.time()
