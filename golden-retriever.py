@@ -35,12 +35,12 @@ stemmer = PorterStemmer()
 def extract_document_text(document):
     data = json.loads(document)
     # Extract the title and text from document json, and make it lowercase
-    return f"{data["title"]} + ' ' + {data["text"]}".lower()
+    return f"{data['title']} + ' ' + {data['text']}".lower()
 
 def extract_query_text(query):
     data = json.loads(query)
     # Extract the text from query json, and make it lowercase
-    return f"{data["text"]}".lower()
+    return f"{data['text']}".lower()
 
 def tokenize(document):
     return word_tokenize(document)
@@ -141,7 +141,7 @@ def rank(query, documents, matrix):
         inverted_index (dict): example.
     
     Returns:
-        list: 
+        list: A list of tuples in the form (document_id, BM25_score)
     """
     scores = {document_id: 0 for document_id, _ in documents.items()}
 
@@ -216,9 +216,13 @@ if __name__ == "__main__":
         doc_length_sum += documents[document_id][0]
     avdl = doc_length_sum/len(documents)
 
-    # print(bm25("methyl", "3", documents, inverted_index, avdl))
+    # Perform retrieval and ranking
+    # Compute the BM25 score between every document and every term in the vocabulary
     matrix = bm25_matrix(documents, inverted_index, avdl)
-    print(rank(queries["0"], documents, matrix))
+
+    # tests
+    # print(bm25("methyl", "3", documents, inverted_index, avdl))
+    # print(rank(queries["0"], documents, matrix))
     # print(rank(["brain", "play", "disabl"], documents, matrix))
 
     # print(matrix["play"]["3"])
@@ -228,3 +232,19 @@ if __name__ == "__main__":
 
     # for term, value in inverted_index.items():
     #     print(f"term: {term} value: {value}")
+
+
+    # Write the top 100 ranked documents for every test query to an output file
+    with open("Results.txt", "w") as file:
+        for query_id, query_content in queries.items():
+            if (int(query_id) % 2 == 1) :
+                # Obtain the ranked documents for the current query
+                ranked_documents = rank(query_content, documents, matrix)
+
+                # Take the top 100 documents and add them to the file
+                for i in range(100):
+                    document_id = ranked_documents[i][0]
+                    document_rank = i + 1
+                    document_score = ranked_documents[i][1]
+                    tag = "run_1"
+                    file.write(f"{str(query_id)} Q0 {str(document_id)} {str(document_rank)} {str(document_score)} {tag}\n")
