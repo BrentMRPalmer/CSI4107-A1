@@ -59,9 +59,25 @@ and outputs the ranked results in `Results.txt`.
 #### Entry Point (Main)
 
 The `golden_retriever.py` file beings in main, where it first reads the arguments representing the file paths
-of the corpus and the query. It then 
+of the corpus and the query. It then reads in, preprocesses (as described below in
+[Step 1: Preprocessing](#step-1-preprocessing)), and stores all of the queries. The queries are passed to the 
+`load_and_rank` method, which is the pipeline that preprocesses, indexes, and retrieves and ranks the documents.
+
+The `load_and_rank` is called twice, once to rank the documents using the title and text of the documents (results saved 
+in `Results.txt`), and again to rank the documents using only the titles (results saved in `Results_Title_Only.txt`).
+
+Within `load_and_rank`, first the documents are read in and stored. Each document is preprocessed as described below in
+[Step 1: Preprocessing](#step-1-preprocessing) as it is read in. Then, the inverted index is created as described below
+in [Step 2: Indexing](#step-2-indexing). Afterwards, a matrix containing all of the BM25 scores for each query and document is
+computed. Next, the documents are ranked for each of the queries. The matrix formation process and ranking is described in
+[Step 3: Retrieval and Ranking](#step-3-retrieval-and-ranking). The results are saved in the `Results.txt` or `Results_Title_Only.txt`
 
 #### Step 1: Preprocessing
+
+The preprocessing pipeline requires some global data that should only be initialized once, so it is initialized 
+at the start of the `golden_retriever.py` file. 
+
+The preprocessing pipeline handles the preprocessing for both queries and documents. 
 
 #### Step 2: Indexing
 
@@ -121,6 +137,8 @@ The Scifact dataset is available [here](https://public.ukp.informatik.tu-darmsta
 
 ### How big was the vocabulary?
 
+We ran `len(inverted_index)`...
+
 ### Sample of 100 tokens from the vocabulary
 
 ### First 10 answers to the first 2 queries
@@ -133,8 +151,8 @@ The Scifact dataset is available [here](https://public.ukp.informatik.tu-darmsta
 
 ## Mean Average Precision (MAP) Score
 
-**Titles Only Run:** 0.6310
+**Titles and Full Text:** 0.6310
 
-**Titles and Full Text:** 0.4023
+**Titles Only Run:** 0.4023
 
 ### Discussion
