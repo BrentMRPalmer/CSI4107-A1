@@ -121,9 +121,15 @@ This code builds an inverted index by iterating through a corpus of preprocessed
 
 The resulting index is a dictionary in which each token maps to a list of two elements. The first element in this list is an integer denoting how many distinct documents contain that token, i.e. the document frequency. The second element is itself a list of tuples, where each tuple contains a document ID and the count of how many times that token appeared in that document.
 
-
-
 #### Step 3: Retrieval and Ranking
+
+The retrieval phase begins with `compute_bm25`, a function that calculates the BM25 score between a single term and a document. Inside `compute_bm25`, the algorithm first determines the term frequency (tf) for the chosen document by looking up the document’s token count in the inverted index. It then applies the classic BM25 formula (referencing Week 2 from the course website) which takes into account the document frequency. The adjustable hyperparameters `k1` and `b` control term frequency saturation and length normalization, respectively. We chose the values for them based on trial and error.
+
+Next, `compute_bm25_matrix` computes BM25 scores for every term in the vocabulary against every document. It outputs a nested dictionary (the BM25 matrix) where the top-level keys are terms, and each term maps to a dictionary keyed by document ID: BM25 score pairs. This precomputation makes subsequent queries faster, since lookups require only a direct index access rather than repeated BM25 calculations.
+
+The `rank` function then aggregates BM25 scores for a given query. It starts with a default score of zero for all documents, iterates over each query term, and sums that term’s BM25 score for any document that contains it. Documents that do not include the term are not updated. Finally, the function produces a sorted list of `(document_id, BM25_score)` tuples in descending order of their BM25 scores.
+
+Lastly, `load_and_rank` orchestrates the entire pipeline. It reads and preprocesses the document corpus, constructs the inverted index, computes the BM25 matrix, and then processes each query, writing the top 100 ranked results (by BM25 score) to an output file.
 
 #### Top 100 Results
 
