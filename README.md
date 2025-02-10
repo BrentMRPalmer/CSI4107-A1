@@ -37,6 +37,7 @@ Natasa Bolic
 - Cleaning test.tsv
 - Top 100 results and results.txt
 - Running trec_eval
+- Report
 
 ## Summary of Results
 
@@ -310,6 +311,8 @@ link
 
 #### Query 1
 Below are the first 10 results of our information retrieval system for the first test query (note that the first odd query has ID 9). These were accessed from the `Results.txt` file, which contains the top 100 documents for every query.
+
+Query 9 is `32% of liver transplantation programs required patients to discontinue methadone treatment in 2001.`
 ```
 9 Q0 44265107 1 18.958258391537722 text_included
 9 Q0 24700152 2 7.423023189374037 text_included
@@ -325,6 +328,8 @@ Below are the first 10 results of our information retrieval system for the first
 
 #### Query 2
 Below are the first 10 results of our information retrieval system for the second test query. These were accessed from the `Results.txt` file. These were accessed from the `Results.txt` file, which contains the top 100 documents for every query.
+
+Query 11 is `4-PBA treatment raises endoplasmic reticulum stress in response to general endoplasmic reticulum stress markers.`
 ```
 11 Q0 25510546 1 17.37933522482014 text_included
 11 Q0 20904154 2 14.695012721017557 text_included
@@ -339,6 +344,9 @@ Below are the first 10 results of our information retrieval system for the secon
 ```
 
 ### Discussion of Results
+For the first query, the similarity score of document 44265107 is very high compared to the rest of the documents. From looking at the content of document 44265107 (titled "Liver transplantation and opioid dependence"), there are many mentions of variations of the phrase "liver transplant", which is the theme of the query.
+
+For the second query, the similarity scores are quite high for the top 10 documents. From observing the content of the documents, there appears to be overlap in their themes and the query theme, with moderate occurrences of phrases like "endoplasmic reticulum" and "stress".
 
 
 ## Mean Average Precision (MAP) Score
@@ -351,4 +359,4 @@ Below are the first 10 results of our information retrieval system for the secon
 
 We obtain better results when we use the titles and the full text, as opposed to simply the titles. More specifically, the mean average precision is 22.87% higher when we include the text of the documents as well. 
 
-A possible reason is that the full text provides more context about the document. For example, the full text is more likely than just the title to include synonyms for important terms. So, if a query contains a synonym for a term in the title, it is possible that it would be matched with the document if the information retrieval system uses the full text, but not if it uses just the title.
+A possible reason is that the full text provides more context about the document. For example, the full text is more likely to be representative of the document content because it contains a wider variety of terms, thus casting a wider net to match with certain relevant terms in queries.
