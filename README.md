@@ -9,6 +9,7 @@
 - [Description of Algorithms, Data Structures, and Optimizations](#description-of-algorithms-data-structures-and-optimizations)
 - [Vocabulary](#vocabulary)
 - [Mean Average Precision (MAP) Score](#mean-average-precision-map-score)
+- [References](#references)
 
 ## Names and Student Numbers
 Brent Palmer (300193610) <br>
@@ -360,3 +361,12 @@ For the second query, the similarity scores are quite high for the top 10 docume
 We obtain better results when we use the titles and the full text, as opposed to simply the titles. More specifically, the mean average precision is 22.87% higher when we include the text of the documents as well. 
 
 A possible reason is that the full text provides more context about the document. For example, the full text is more likely to be representative of the document content because it contains a wider variety of terms, thus casting a wider net to match with certain relevant terms in queries.
+
+## References
+Stopword removal (of english words): https://www.geeksforgeeks.org/removing-stop-words-nltk-python/ 
+command line args https://www.geeksforgeeks.org/command-line-arguments-in-python/ 
+Remove words without letters (numbers, symbols, etc.): https://www.w3schools.com/python/ref_string_isalpha.asp + https://www.w3schools.com/python/ref_func_any.asp 
+Porter stemming: https://www.geeksforgeeks.org/python-stemming-words-with-nltk/ 
+Sorted dictionary: https://www.datacamp.com/tutorial/sort-a-dictionary-by-value-python 
+Writing to tsv: https://medium.com/@nutanbhogendrasharma/creating-and-writing-to-different-type-of-files-in-python-6a2a1579bc25
+Read tsv:  https://www.geeksforgeeks.org/simple-ways-to-read-tsv-files-in-python/
