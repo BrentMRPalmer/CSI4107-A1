@@ -149,17 +149,148 @@ The resulting index is a dictionary in which each token maps to a list of two el
 
 ### How big was the vocabulary?
 
-We ran `len(inverted_index)`...
+We ran `len(inverted_index)` to obtain the size of the vocabulary, and found that it contained 37975 terms.
 
 ### Sample of 100 tokens from the vocabulary
+Below is a sample of 100 tokens from our vocabulary. To obtain these results, we ran a loop which iterates over the first 100 tokens in our inverted index and printed them.
+
+```
+microstructur
+develop
+human
+newborn
+cerebr
+white
+matter
+assess
+vivo
+diffus
+tensor
+magnet
+reson
+imag
+alter
+architectur
+brain
+affect
+cortic
+result
+function
+disabl
+line
+scan
+diffusion-weight
+mri
+sequenc
+analysi
+appli
+measur
+appar
+coeffici
+calcul
+rel
+anisotropi
+delin
+three-dimension
+fiber
+preterm
+full-term
+infant
+effect
+prematur
+earli
+gestat
+studi
+term
+central
+mean
+wk
+microm2/m
+decreas
+posterior
+limb
+intern
+capsul
+versu
+closer
+birth
+absolut
+valu
+area
+compar
+nonmyelin
+corpu
+callosum
+visibl
+mark
+differ
+organ
+data
+indic
+quantit
+water
+insight
+live
+induct
+myelodysplasia
+myeloid-deriv
+suppressor
+cell
+myelodysplast
+syndrom
+md
+age-depend
+stem
+malign
+share
+biolog
+featur
+activ
+adapt
+immun
+respons
+ineffect
+hematopoiesi
+report
+mdsc
+classic
+link
+```
 
 ### First 10 answers to the first 2 queries
 
 #### Query 1
+Below are the first 10 results of our information retrieval system for the first test query (note that the first odd query has ID 9). These were accessed from the `Results.txt` file, which contains the top 100 documents for every query.
+```
+9 Q0 44265107 1 18.958258391537722 text_included
+9 Q0 24700152 2 7.423023189374037 text_included
+9 Q0 25182647 3 6.6074423594848986 text_included
+9 Q0 16737210 4 6.412449606330081 text_included
+9 Q0 8190282 5 6.380871226577165 text_included
+9 Q0 14647747 6 6.191347824712254 text_included
+9 Q0 37699461 7 6.1785650232134355 text_included
+9 Q0 21859699 8 6.100003218989789 text_included
+9 Q0 28419824 9 5.822323687699198 text_included
+9 Q0 26105746 10 5.529571232935707 text_included
+```
 
 #### Query 2
+Below are the first 10 results of our information retrieval system for the second test query. These were accessed from the `Results.txt` file. These were accessed from the `Results.txt` file, which contains the top 100 documents for every query.
+```
+11 Q0 25510546 1 17.37933522482014 text_included
+11 Q0 20904154 2 14.695012721017557 text_included
+11 Q0 13780287 3 14.39400930168742 text_included
+11 Q0 7482674 4 14.208599621494006 text_included
+11 Q0 32587939 5 14.160733088926552 text_included
+11 Q0 4399311 6 14.076685357651069 text_included
+11 Q0 29459383 7 13.871039001428388 text_included
+11 Q0 13958154 8 12.97664066012545 text_included
+11 Q0 19708993 9 12.767749957207569 text_included
+11 Q0 8453819 10 12.419113157787327 text_included
+```
 
 ### Discussion of Results
+
 
 ## Mean Average Precision (MAP) Score
 
@@ -168,3 +299,7 @@ We ran `len(inverted_index)`...
 **Titles Only Run:** 0.4023
 
 ### Discussion
+
+We obtain better results when we use the titles and the full text, as opposed to simply the titles. More specifically, the mean average precision is 22.87% higher when we include the text of the documents as well. 
+
+A possible reason is that the full text provides more context about the document. For example, the full text is more likely than just the title to include synonyms for important terms. So, if a query contains a synonym for a term in the title, it is possible that it would be matched with the document if the information retrieval system uses the full text, but not if it uses just the title.
