@@ -117,6 +117,10 @@ Finally, the code performs stemming using an NLTK `PorterStemmer` instance, redu
 
 #### Step 2: Indexing
 
+This code builds an inverted index by iterating through a corpus of preprocessed documents, where each document is indexed by its ID. For each document, the algorithm retrieves two things: the total number of tokens and the list of stemmed, stopword-filtered tokens. It then uses Python’s `Counter` class to count how many times each token appears within that document, allowing the index construction to also record term frequencies.
+
+The resulting index is a dictionary in which each token (string) maps to a list of two elements. The first element in this list is an integer denoting how many distinct documents contain that token, i.e. the document frequency. The second element is itself a list of tuples, where each tuple contains a document ID and the count of how many times that token appeared in that document.
+
 
 
 #### Step 3: Retrieval and Ranking
