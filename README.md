@@ -75,17 +75,53 @@ computed. Next, the documents are ranked for each of the queries. The matrix for
 #### Step 1: Preprocessing
 
 The preprocessing pipeline requires some global data that should only be initialized once, so it is initialized 
-at the start of the `golden_retriever.py` file. 
+at the start of the `golden_retriever.py` file. This includes the set of stopwords to be removed, as well as 
+the NLTK stemmer.
 
-The preprocessing pipeline handles the preprocessing for both queries and documents. 
+The preprocessing pipeline handles the preprocessing for both queries and documents. The queries call the pipeline from
+main, whereas the documents call this function as the first step of `load_and_rank`. For both queries and documents, a function that orchestrates 
+the preprocessing pipeline is called. This method calls four different methods each with
+distinct responsibilities:
+- First, the raw JSON-formatted query or document is passed to a function that extracts the desired text and returns it in lowercase
+as a string.
+- Second, the lowercase text is passed to a function that tokenizes it (converts it into a list of the words and punctuation).
+- Third, the list of tokens is passed to a function that removes all stopwords, returning the filtered list.
+- Finally, the filtered list of tokens is passed to a stemmer, that stems each token in the list.
+
+Altogether, the overall pipeline function returns the extracted lowercase, tokenized, filtered, and stemmed list of tokens.
 
 #### Step 2: Indexing
 
+After the `load_and_rank` function calls the preprocessing pipeline as step 1, step 2 involves creating an inverted index using 
+the preprocessed document corpus. A single function is used to create the inverted index, taking the preprocessed representation of the document corpus
+as input. Iterating over all of the documents, the counts of each token are calculated and inserted into the inverted index. The constructed
+inverted index is returned.
+
 #### Step 3: Retrieval and Ranking
+
+After the `load_and_rank` function calls the indexing function as step 2, step 3 involves calculating the BM25 scores and ranking the documents.
+Firstly, a function takes the preprocessed document corpus, the inverted index, and the calculated average document length as input to
+compute a matrix that stores the BM25 score of every combination of term in our vocabulary with every document. To do so, each combination
+of term and document is sent to a function that calculates the BM25 score of the provided combination. Finally, the computed BM25 matrix is
+used to rank the documents. For each odd-numbered query (note that the assignment description specifies that we must only calculate the scores
+for odd-numbdered queries), a single method is called which takes the preprocessed query, the preprocessed document corpus,
+the computed BM25 matrix, and the inverted_index as input, and computes the ranking. The score of a document is the sum of the BM25 scores 
+between each term in the query and the document. The function returns a list of tuples in the form (document_id, BM25_score), sorted by 
+BM25_score in descending order. This is the final ranking of all odd-numbered queries.
 
 #### Top 100 Results
 
+Despite having calculated the final document ranking, the assignment requires one more step: filtering the top 100 documents for each query,
+and saving them to a file called `Results.txt`. Since the documents are ranked in sorted order, we simply loop over the first 100 documents
+in the ranked list of tuples, and save their values to `Results.txt`. The results stored in `Results.txt` can then be passed to the
+`trec_eval` script alongside the `formatted_test.tsv` file to compute the MAP score.
+
 ### Trec Processor (Cleaning trec.tsv)
+
+There is a second program that cleans the provided `test.tsv` file. The original file is missing a column of zeroes, so it does not work
+with the `trec_eval` script. Furthermore, it includes even-numbered queries. Thus, the `trec_processor.py` file is used to process 
+the `test.tsv` file, formatting it correctly such that it can be used with the `trec_eval` script. Having been passed the `test.tsv` file 
+path as input and a target file path as output, a `formatted_test.tsv` file is generated which can be passed to `trec_eval`.
 
 ## How to Run
 
