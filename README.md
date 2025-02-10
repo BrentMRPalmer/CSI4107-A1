@@ -151,6 +151,8 @@ The `rank` function then aggregates BM25 scores for a given query. It starts wit
 
 ### Trec Processor (Cleaning trec.tsv)
 
+A tab-separated test set is read from a file while the header row is skipped. For each subsequent row, a zero is inserted into the second column, and the first column (representing the query ID) is converted to an integer to check if it is odd. Only rows with odd IDs are written to a new file. This process produces a reduced test set containing only the odd-numbered queries, formatted for TREC eval.
+
 ## Vocabulary
 
 ### How big was the vocabulary?
