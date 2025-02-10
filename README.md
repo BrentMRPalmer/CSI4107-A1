@@ -147,7 +147,7 @@ The `rank` function then aggregates BM25 scores for a given query. It starts wit
 
 #### Top 100 Results
 
-`load_and_rank` orchestrates the entire pipeline by reading and preprocessing the document corpus, constructing the inverted index, computing the BM25 matrix, and then processing each query by calling the `rank` function on those queries whose IDs are odd (`int(query_id) % 2 == 1`). It takes the top 100 ranked documents for each processed query and writes the output to a file. The output records the query ID, document ID, rank position, BM25 score, and a tag indicating whether the ranking included “text_included” or “title_only” data. 
+`load_and_rank` orchestrates the entire pipeline by reading and preprocessing the document corpus, constructing the inverted index, computing the BM25 matrix, and then processing each query by calling the `rank` function on those queries whose IDs are odd. It takes the top 100 ranked documents for each processed query and writes the output to a file. The output records the query ID, document ID, rank position, BM25 score, and a tag indicating whether the ranking included “text_included” or “title_only” data. 
 
 ### Trec Processor (Cleaning trec.tsv)
 
