@@ -58,7 +58,8 @@ and outputs the ranked results in `Results.txt`.
 
 #### Entry Point (Main)
 
-
+The `golden_retriever.py` file beings in main, where it first reads the arguments representing the file paths
+of the corpus and the query. It then 
 
 #### Step 1: Preprocessing
 
