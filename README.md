@@ -3,6 +3,7 @@
 ## Table of Contents
 - [Names and Student Numbers](#names-and-student-numbers)
 - [Distribution of Work](#distribution-of-work)
+- [Summary of Results](#summary-of-results)
 - [Functionality of Programs](#functionality-of-programs)
 - [How to Run](#how-to-run)
 - [Description of Algorithms, Data Structures, and Optimizations](#description-of-algorithms-data-structures-and-optimizations)
@@ -36,6 +37,10 @@ Natasa Bolic
 - Cleaning test.tsv
 - Top 100 results and results.txt
 - Running trec_eval
+
+## Summary of Results
+
+We achieved a mean average precision score of 0.6310 using the BM25 approach.
 
 ## Functionality of Programs
 
